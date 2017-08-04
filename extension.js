@@ -17,7 +17,7 @@ function activate(context) {
         // The code you place here will be executed every time your command is executed
 
         // Display a message box to the user
-        vscode.window.showInformationMessage('Hello World!');
+        // vscode.window.showInformationMessage('Hello World!');
         // console.log(vscode.window.activeTextEditor.selections);
         let editor = vscode.window.activeTextEditor;
         for (var index = editor.selection.start.line; index < editor.selection.end.line; index++) {
@@ -30,10 +30,10 @@ function activate(context) {
         let relativePath = vscode.workspace.asRelativePath(currentPath);
         let guard = relativePath.toUpperCase().replace(/[\/\.]/g, '_');
         let startGuard = '#ifndef ' + guard + '\n#define ' + guard + '\n\n\n';
-        let endGuard = '#endif // ' + guard;
+        let endGuard = '\n#endif // ' + guard;
         console.log(guard)
         let start = new vscode.Position(0, 0);
-        let end = new vscode.Position(editor.document.lineCount + 2, 0)
+        let end = new vscode.Position(editor.document.lineCount, 0)
         vscode.window.activeTextEditor.edit(function(editBuilder) {
             editBuilder.insert(start, startGuard);
             editBuilder.insert(end, endGuard)
