@@ -9,41 +9,184 @@ function activate(context) {
     // Use the console to output diagnostic information (console.log) and errors (console.error)
     // This line of code will only be executed once when your extension is activated
     console.log('Congratulations, your extension "cpppp" is now active!');
+    context.subscriptions.push(vscode.commands.registerCommand('extension.addHeaderGuard', addHeaderGuard));
+    context.subscriptions.push(vscode.commands.registerCommand('extension.genGet', genGetSet(['get'])));
+    context.subscriptions.push(vscode.commands.registerCommand('extension.genSet', genGetSet(['set'])));
+    context.subscriptions.push(vscode.commands.registerCommand('extension.genGetAndSet', genGetSet(['get', 'set'])));
 
-    // The command has been defined in the package.json file
-    // Now provide the implementation of the command with  registerCommand
-    // The commandId parameter must match the command field in package.json
-    var disposable = vscode.commands.registerCommand('extension.sayHello', function () {
-        // The code you place here will be executed every time your command is executed
-
-        // Display a message box to the user
-        // vscode.window.showInformationMessage('Hello World!');
-        // console.log(vscode.window.activeTextEditor.selections);
-        let editor = vscode.window.activeTextEditor;
-        for (var index = editor.selection.start.line; index < editor.selection.end.line; index++) {
-            var element = editor.document.lineAt(index);
-            console.log(index, element);
-        }
-        console.log(vscode.window.activeTextEditor.document.uri)
-        console.log(vscode.window.activeTextEditor.document.fileName)
-        let currentPath = vscode.window.activeTextEditor.document.uri;
-        let relativePath = vscode.workspace.asRelativePath(currentPath);
-        let guard = relativePath.toUpperCase().replace(/[\/\.]/g, '_');
-        let startGuard = '#ifndef ' + guard + '\n#define ' + guard + '\n\n\n';
-        let endGuard = '\n#endif // ' + guard;
-        console.log(guard)
-        let start = new vscode.Position(0, 0);
-        let end = new vscode.Position(editor.document.lineCount, 0)
-        vscode.window.activeTextEditor.edit(function(editBuilder) {
-            editBuilder.insert(start, startGuard);
-            editBuilder.insert(end, endGuard)
-        })
-
-
-    });
-
-    context.subscriptions.push(disposable);
 }
+
+
+function addHeaderGuard() {
+    let editor = vscode.window.activeTextEditor;
+    if (!editor) {
+        return;
+    }
+    let headerPath = editor.document.fileName;
+    if (!headerPath.endsWith('.h')) {
+        vscode.window.showInformationMessage('Not a cpp header file.');
+        return;
+    }
+    const relativePath = vscode.workspace.asRelativePath(headerPath);
+    const guard = relativePath.toUpperCase().replace(/[^\w]/g, '_');
+    const startGuard = [
+        '#ifndef ', guard, '\n',
+        '#define ', guard, '\n',
+        '\n', '\n', '\n'
+    ].join('');
+    const endGuard = [
+        '\n',
+        '#endif ', '// ', guard
+    ].join('');
+    const startPosition = new vscode.Position(0, 0),
+        endPosition = new vscode.Position(editor.document.lineCount, 0);
+    editor.edit(function (editBuilder) {
+        editBuilder.insert(startPosition, startGuard);
+        editBuilder.insert(endPosition, endGuard);
+    })
+}
+
+function parseLine(line_) {
+    let line = line_.trim()
+    if (line.startsWith('//')) {
+        return null;
+    }
+    let index = 0;
+    let code = {}
+    let brackets = 0
+    while (index < line.length) {
+        if (line[index] === ' ') {
+            if (brackets === 0) {
+                code.type = line.substring(0, index).replace(/\s/g, '');
+                break;
+            } else {
+                // pass
+            }
+        } else if (line[index] === '<') {
+            brackets++;
+        } else if (line[index] === '>') {
+            brackets--;
+        } else {
+            // pass
+        }
+        index++;
+    }
+    if (index  === line.length) {
+        return null;
+    }
+    line = line.substring(index).trimLeft()
+    index = 0;
+    while (index < line.length) {
+        if (line[index] === ';') {
+            code.var = line.substring(0, index).replace(/\s/g, '');
+            if (code.var && (code.var[0] === '*' || code.var[0] === '&')) {
+                // pointer or reference
+                code.type += code.var[0];
+                code.var = code.var.substring(1);
+            }
+            break;
+        } else {
+            // pass
+        }
+        index++;
+    }
+    if (index != line.length) {
+        code.comment = line.substring(index).trimLeft();
+    }
+    code.varLite = code.var.substring(0, code.var.length - 1)
+    return code;
+}
+
+const PRIMARY_TYPE = [
+    'bool',
+    'double', 'float',
+    'int', 'uint', 'int32_t', 'uint32_t', 'int64_t', 'uint64_t',
+]
+
+function isPrimaryType(varType) {
+    return PRIMARY_TYPE.indexOf(varType) !== -1;
+}
+
+function genSet(variable, primaryType) {
+    if (primaryType === undefined) {
+        primaryType = isPrimaryType(variable.type);
+    }
+    let code;
+    if (primaryType) {
+        code = [
+            'void set_', variable.varLite, '(', variable.type, ' ', variable.varLite, ')',
+            ' { ', variable.var, ' = ', variable.varLite, '; }',
+        ]
+    } else {
+        code = [
+            'void set_', variable.varLite, '( const ', variable.type, ' &', variable.varLite, ')',
+            ' { ', variable.var, ' = ', variable.varLite, '; }',
+        ]
+    }
+    return code.join('');
+}
+
+function genGet(variable, primaryType) {
+    if (primaryType === undefined) {
+        primaryType = isPrimaryType(variable.type);
+    }
+    if (primaryType) {
+        return [
+            variable.type, ' ', variable.varLite, '() const ',
+            '{ return ', variable.var, '; }',
+        ].join('');
+    } else {
+        return [
+            [
+                variable.type, '& ', variable.varLite, '() const ',
+                '{ return ', variable.var, '; }',
+            ],
+            [
+                'const ', variable.type, '& ', variable.varLite, '() const ',
+                '{ return ', variable.var, '; }',
+            ]].map(function (code) {
+                return code.join('');
+            }).join('\n');
+    }
+}
+
+function genGetSet(props) {
+    return function () {
+        let editor = vscode.window.activeTextEditor;
+        let selection = editor.selection;
+        if (!selection) {
+            vscode.window.showInformationMessage('No variables selected.');
+            return;
+        }
+        let codes = [
+            '',
+            '// getters and setters',
+        ];
+        for (let index = selection.start.line; index <= selection.end.line; index++) {
+            let line = editor.document.lineAt(index).text;
+            let variable = parseLine(line);
+            if (!variable) {
+                continue;
+            }
+            let code = '// ' + variable.var;
+            let primaryType = isPrimaryType(variable.type);
+            if (props.indexOf('get') >= 0) {
+                code += '\n' + genGet(variable, primaryType)
+            }
+            if (props.indexOf('set') >= 0) {
+                code += '\n' + genSet(variable, primaryType)
+            }
+            codes.push(code);
+        }
+        codes.push('')
+        const content = codes.join('\n\n');
+        const insertPosition = new vscode.Position(selection.end.line + 1, 0);
+        editor.edit(function(editBuilder) {
+            editBuilder.insert(insertPosition, content);
+        })
+    }
+}
+
 exports.activate = activate;
 
 // this method is called when your extension is deactivated

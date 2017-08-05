@@ -1,8 +1,8 @@
 {
     "name": "cpppp",
     "displayName": "CPPPP",
-    "description": "",
-    "version": "0.0.1",
+    "description": "吃一个月的傲娇鸡，谢谢",
+    "version": "0.1.0",
     "publisher": "lisnb",
     "engines": {
         "vscode": "^1.14.0"
@@ -11,13 +11,25 @@
         "Other"
     ],
     "activationEvents": [
-        "onCommand:extension.sayHello"
+        "onCommand:extension.addHeaderGuard",
+        "onCommand:extension.genGet",
+        "onCommand:extension.genSet",
+        "onCommand:extension.genGetAndSet"
     ],
     "main": "./extension",
     "contributes": {
-        "commands": [{
-            "command": "extension.sayHello",
-            "title": "Hello World"
+        "commands": [ {
+            "command": "extension.addHeaderGuard",
+            "title": "CPPPP Add Header Guard"
+        }, {
+            "command": "extension.genGet",
+            "title": "CPPPP Gen Get"
+        }, {
+            "command": "extension.genSet",
+            "title": "CPPPP Gen Set"
+        }, {
+            "command": "extension.genGetAndSet",
+            "title": "CPPPP Gen Get And Set"
         }]
     },
     "scripts": {
