@@ -119,7 +119,7 @@ function genSet(variable, primaryType) {
         ]
     } else {
         code = [
-            'void set_', variable.varLite, '( const ', variable.type, ' &', variable.varLite, ')',
+            'void set_', variable.varLite, '(const ', variable.type, ' &', variable.varLite, ')',
             ' { ', variable.var, ' = ', variable.varLite, '; }',
         ]
     }
