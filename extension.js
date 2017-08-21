@@ -107,29 +107,19 @@ function isPrimaryType(varType) {
     return PRIMARY_TYPE.indexOf(varType) !== -1;
 }
 
-function isPointerType(varType) {
-    return varType.endsWith('*');
-}
-
 function genSet(variable, primaryType) {
     if (primaryType === undefined) {
         primaryType = isPrimaryType(variable.type);
     }
-    let pointerType = isPointerType(variable.type);
     let code;
     if (primaryType) {
         code = [
             'void set_', variable.varLite, '(', variable.type, ' ', variable.varLite, ')',
             ' { ', variable.var, ' = ', variable.varLite, '; }',
         ]
-    } else if (pointerType) {
-        code = [
-            'void set_', variable.varLite, '(', variable.type, ' const ', variable.varLite, ')',
-            ' { ', variable.var, ' = ', variable.varLite, '; }',
-        ]
     } else {
         code = [
-            'void set_', variable.varLite, '(const ', variable.type, ' &', variable.varLite, ')',
+            'void set_', variable.varLite, '( const ', variable.type, ' &', variable.varLite, ')',
             ' { ', variable.var, ' = ', variable.varLite, '; }',
         ]
     }
@@ -140,30 +130,15 @@ function genGet(variable, primaryType) {
     if (primaryType === undefined) {
         primaryType = isPrimaryType(variable.type);
     }
-
-    let pointerType = isPointerType(variable.type);
-
     if (primaryType) {
         return [
             variable.type, ' ', variable.varLite, '() const ',
             '{ return ', variable.var, '; }',
         ].join('');
-    } else if (pointerType) {
-        return [
-            [
-                variable.type, ' ', variable.varLite, '() ',
-                '{ return ', variable.var, '; }',
-            ],
-            [
-                'const ', variable.type, ' ', variable.varLite, '() const ',
-                '{ return ', variable.var, '; }',
-            ]].map(function (code) {
-                return code.join('');
-            }).join('\n');
     } else {
         return [
             [
-                variable.type, '& ', variable.varLite, '() ',
+                variable.type, '& ', variable.varLite, '() const ',
                 '{ return ', variable.var, '; }',
             ],
             [
