@@ -2,7 +2,7 @@
     "name": "cpppp",
     "displayName": "CPPPP",
     "description": "吃一个月的傲娇鸡，谢谢",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "publisher": "lisnb",
     "engines": {
         "vscode": "^1.14.0"
