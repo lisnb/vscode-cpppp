@@ -20,12 +20,15 @@ This is a vscode extension providing some ok-I-could-use-it functions.
 
 ## Release Notes
 
-
-### 0.0.1
-
-Initial release of CPPPP
+### 0.1.1
+- support pointer type for getter and setter
+- fix some format mistakes
 
 ### 0.1.0
 
 - Add macro include guard to cpp header files
 - Generate getters and setters
+
+### 0.0.1
+
+Initial release of CPPPP
