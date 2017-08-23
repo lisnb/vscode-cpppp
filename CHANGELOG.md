@@ -6,6 +6,10 @@ Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how 
 ## [Unreleased]
 - Initial release
 
+## [0.2.0] - 2017-08-23
+### Added
+- support gen clear simply
+
 ## [0.1.1] - 2017-08-22
 ### Added
 - support pointer type for getter and setter
