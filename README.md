@@ -20,7 +20,12 @@ This is a vscode extension providing some ok-I-could-use-it functions.
 
 ## Release Notes
 
+### 0.2.0
+
+- support gen clear simply
+
 ### 0.1.1
+
 - support pointer type for getter and setter
 - fix some format mistakes
 
