@@ -13,6 +13,7 @@ function activate(context) {
     context.subscriptions.push(vscode.commands.registerCommand('extension.genGet', genGetSet(['get'])));
     context.subscriptions.push(vscode.commands.registerCommand('extension.genSet', genGetSet(['set'])));
     context.subscriptions.push(vscode.commands.registerCommand('extension.genGetAndSet', genGetSet(['get', 'set'])));
+    context.subscriptions.push(vscode.commands.registerCommand('extension.GenClear', genGetSet(['clear'])));
 
 }
 
@@ -111,6 +112,18 @@ function isPointerType(varType) {
     return varType.endsWith('*');
 }
 
+function isBoolType(varType) {
+    return PRIMARY_TYPE.indexOf(varType) === 0;
+}
+
+function isFloatingPointType(varType) {
+    return PRIMARY_TYPE.indexOf(varType) >= 1 && PRIMARY_TYPE.indexOf(varType) <= 2;
+}
+
+function isIntegerType(varType) {
+    return PRIMARY_TYPE.indexOf(varType) >= 3 && PRIMARY_TYPE.indexOf(varType) <= 8;
+}
+
 function genSet(variable, primaryType) {
     if (primaryType === undefined) {
         primaryType = isPrimaryType(variable.type);
@@ -185,8 +198,14 @@ function genGetSet(props) {
         }
         let codes = [
             '',
-            '// getters and setters',
         ];
+
+        if (props.indexOf('get') >= 0 || props.indexOf('set') >= 0) {
+            codes.push('// getters and setters');
+        } else if (props.indexOf('clear') >= 0) {
+            codes.push('// clear');
+        }
+
         for (let index = selection.start.line; index <= selection.end.line; index++) {
             let line = editor.document.lineAt(index).text;
             let variable = parseLine(line);
@@ -196,19 +215,47 @@ function genGetSet(props) {
             let code = '// ' + variable.var;
             let primaryType = isPrimaryType(variable.type);
             if (props.indexOf('get') >= 0) {
-                code += '\n' + genGet(variable, primaryType)
+                code += '\n' + genGet(variable, primaryType);
             }
             if (props.indexOf('set') >= 0) {
-                code += '\n' + genSet(variable, primaryType)
+                code += '\n' + genSet(variable, primaryType);
+            }
+            if (props.indexOf('clear') >= 0) {
+                code += '\n' + GenClear(variable);
             }
             codes.push(code);
         }
+
         codes.push('')
         const content = codes.join('\n\n');
         const insertPosition = new vscode.Position(selection.end.line + 1, 0);
         editor.edit(function(editBuilder) {
             editBuilder.insert(insertPosition, content);
         })
+    }
+}
+
+function GenClear(variable) {
+    if (isBoolType(variable.type)) {
+        return [
+            variable.varLite, ' = false;',
+        ].join('');
+    } else if (isFloatingPointType(variable.type)) {
+        return [
+            variable.varLite, ' = 0.0;',
+        ].join('');
+    } else if (isIntegerType(variable.type)) {
+        return [
+            variable.varLite, ' = 0;',
+        ].join('');
+    } else if (isPointerType(variable.type)) {
+        return [
+            variable.varLite, ' = NULL;',
+        ].join('');
+    } else {
+        return [
+            variable.varLite, '.clear();',
+        ].join('');
     }
 }
 

@@ -14,7 +14,8 @@
         "onCommand:extension.addHeaderGuard",
         "onCommand:extension.genGet",
         "onCommand:extension.genSet",
-        "onCommand:extension.genGetAndSet"
+        "onCommand:extension.genGetAndSet",
+        "onCommand:extension.GenClear"
     ],
     "main": "./extension",
     "contributes": {
@@ -30,6 +31,9 @@
         }, {
             "command": "extension.genGetAndSet",
             "title": "CPPPP Gen Get And Set"
+        }, {
+            "command": "extension.GenClear",
+            "title": "CPPPP Gen Clear"
         }]
     },
     "scripts": {
